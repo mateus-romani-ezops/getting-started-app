@@ -36,3 +36,13 @@ docker build -t getting-started .
 ```
 
 This command builds the Docker image and tags it as `getting-started` using the `-t` flag.
+---
+
+## Start the Application
+To start the application, run the following command:
+
+```bash
+docker run -d -p 127.0.0.1:3000:3000 getting-started
+```
+
+This command runs the Docker container in detached mode (returns you to the terminal) and maps port 3000 of the container to port 3000 on the localhost (`-p 127.0.0.1:3000:3000`). The format for this mapping is `HOST:CONTAINER`.
