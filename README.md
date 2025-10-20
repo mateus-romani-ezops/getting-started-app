@@ -28,3 +28,11 @@ EXPOSE 3000
 - `EXPOSE 3000` indicates that the application listens on port 3000.
 ---
 
+## Building the Image
+To build the Docker image, run the following command in the terminal from the directory containing the Dockerfile:
+
+```bash
+docker build -t getting-started .
+```
+
+This command builds the Docker image and tags it as `getting-started` using the `-t` flag.
