@@ -1,0 +1,38 @@
+# Backend Dockerfile for the Node.js API server
+#
+# This Dockerfile builds a lean container for the Express-based API contained
+# in the `src` directory. It installs only production dependencies, copies
+# the source code and exposes port 3000, which the application listens on.
+#
+# Build with:
+#   docker build -f Dockerfile.backend -t getting-started-backend .
+#
+# Run with environment variables pointing to your database service
+# (see docker-compose.yml for an example)
+
+FROM node:18-alpine
+
+# Create and set the working directory
+WORKDIR /usr/src/app
+
+# Copy the package manifests first to leverage cached Docker layers for
+# dependencies. We support both npm and yarn; whichever lock file exists
+# will be used.
+COPY package.json yarn.lock* package-lock.json* ./
+
+# Install production dependencies. If a yarn.lock file is present we use
+# yarn, otherwise we fall back to npm.
+RUN if [ -f yarn.lock ]; then \
+        yarn install --production --frozen-lockfile; \
+    else \
+        npm ci --omit=dev; \
+    fi
+
+# Copy the application source code
+COPY src ./src
+
+# Expose the port the API listens on
+EXPOSE 3000
+
+# Set the default command to start the API server
+CMD ["node", "src/index.js"]

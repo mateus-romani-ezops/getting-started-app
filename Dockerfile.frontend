@@ -1,0 +1,25 @@
+# Frontend Dockerfile for serving static files
+#
+# This Dockerfile packages the static frontend located in `src/static`
+# into a small Alpine-based Nginx container. Nginx will serve
+# the HTML, CSS and JavaScript files on port 80.
+#
+# Build with:
+#   docker build -f Dockerfile.frontend -t getting-started-frontend .
+#
+# In production you can place the compiled assets of a React/Vue/etc.
+# build into `src/static` and rebuild the image.
+
+FROM nginx:alpine
+
+# Remove the default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy static assets from the repository into nginx's web root
+COPY src/static /usr/share/nginx/html
+
+# Expose the default HTTP port
+EXPOSE 80
+
+# Use the default nginx startup command to run in the foreground
+CMD ["nginx", "-g", "daemon off;"]
