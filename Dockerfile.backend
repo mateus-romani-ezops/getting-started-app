@@ -1,0 +1,24 @@
+# Backend Dockerfile for the Node.js API server
+
+FROM node:18-alpine
+
+# Create and set the working directory
+WORKDIR /usr/src/app
+
+COPY package.json yarn.lock* package-lock.json* ./
+
+# Install production dependencies.
+RUN if [ -f yarn.lock ]; then \
+        yarn install --production --frozen-lockfile; \
+    else \
+        npm ci --omit=dev; \
+    fi
+
+# Copy the application source code
+COPY src ./src
+
+# Expose the port the API listens on
+EXPOSE 3000
+
+# Set the default command to start the API server
+CMD ["node", "src/index.js"]
