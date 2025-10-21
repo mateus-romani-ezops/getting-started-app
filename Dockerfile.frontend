@@ -1,0 +1,15 @@
+# Frontend Dockerfile for serving static files
+
+FROM nginx:alpine
+
+# Remove the default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy static assets from the repository into nginx's web root
+COPY src/static /usr/share/nginx/html
+
+# Expose the default HTTP port
+EXPOSE 80
+
+# Use the default nginx startup command to run in the foreground
+CMD ["nginx", "-g", "daemon off;"]
