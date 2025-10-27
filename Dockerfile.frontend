@@ -8,6 +8,9 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy static assets from the repository into nginx's web root
 COPY src/static /usr/share/nginx/html
 
+# Copy custom nginx configuration file
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose the default HTTP port
 EXPOSE 80
 
