@@ -15,6 +15,6 @@ EXPOSE 3306
 
 # Optionally copy initialization scripts. Any .sql file placed in
 # /docker-entrypoint-initdb.d will be executed on first container start.
-# COPY src/persistence/init.sql /docker-entrypoint-initdb.d/
+COPY src/persistence/init.sql /docker-entrypoint-initdb.d/
 
 # MySQL’s default CMD defined in the parent image handles starting the server
