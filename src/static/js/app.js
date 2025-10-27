@@ -152,9 +152,8 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
                         }
                     >
                         <i
-                            className={`far ${
-                                item.completed ? 'fa-check-square' : 'fa-square'
-                            }`}
+                            className={`far ${item.completed ? 'fa-check-square' : 'fa-square'
+                                }`}
                         />
                     </Button>
                 </Col>
