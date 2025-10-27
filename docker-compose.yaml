@@ -3,12 +3,14 @@ version: "3.8"
 services:
   # Backend API service
   backend:
+    networks:
+      - default
     build:
       context: .
       dockerfile: Dockerfile.backend
     container_name: getting-started-backend
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       MYSQL_HOST: db
       MYSQL_USER: todos_user
@@ -17,6 +19,8 @@ services:
 
   # Frontend service serving static files
   frontend:
+    networks:
+      - default
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -47,3 +51,8 @@ services:
 volumes:
   db-data:
     driver: local
+
+networks:
+  default:
+    name: getting-started-network
+    driver: bridge
