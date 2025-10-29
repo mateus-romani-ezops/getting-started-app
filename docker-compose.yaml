@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # Backend API service
   backend:
@@ -12,10 +10,16 @@ services:
     expose:
       - "3000"
     environment:
+      HOST: "0.0.0.0"
+      PORT: 3000
       MYSQL_HOST: db
       MYSQL_USER: todos_user
       MYSQL_PASSWORD: todos_password
       MYSQL_DB: todos_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
 
   # Frontend service serving static files
   frontend:
@@ -38,13 +42,21 @@ services:
       context: .
       dockerfile: Dockerfile.database
     container_name: getting-started-db
-    ports:
-      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: todos_db
       MYSQL_USER: todos_user
       MYSQL_PASSWORD: todos_password
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -uroot -proot_password --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
     volumes:
       - db-data:/var/lib/mysql
 

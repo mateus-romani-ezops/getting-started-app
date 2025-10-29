@@ -17,8 +17,15 @@ RUN if [ -f yarn.lock ]; then \
 # Copy the application source code
 COPY src ./src
 
+# Wait for the database to be ready
+COPY wait-for-db.sh /usr/local/bin/wait-for-db
+RUN chmod +x /usr/local/bin/wait-for-db
+
 # Expose the port the API listens on
 EXPOSE 3000
+
+# Entry point to wait for the database before starting the server
+ENTRYPOINT ["wait-for-db"]
 
 # Set the default command to start the API server
 CMD ["node", "src/index.js"]
