@@ -1,0 +1,6 @@
+aws_region = "us-east-2"
+aws_profile = "treinamento"
+key_name = "semana_3_key_pair"
+github_repo = "https://github.com/mateus-romani-ezops/getting-started-app.git"
+github_branch = "main"
+app_dir = "app"
