@@ -1,19 +1,30 @@
-output "instance_public_ip" {
-  description = "Public IP of the EC2 instance"
-  value       = aws_instance.app.public_ip
+# outputs.tf (para ECS)
+
+# DNS do ALB (endpoint público)
+output "alb_dns_name" {
+  description = "Public DNS name of the Application Load Balancer"
+  value       = module.alb.lb_dns_name
 }
 
-output "instance_public_dns" {
-  description = "Public DNS of the EC2 instance"
-  value       = aws_instance.app.public_dns
+# URL completa do app (HTTP)
+output "alb_url" {
+  description = "HTTP URL to access the application through ALB"
+  value       = "http://${module.alb.lb_dns_name}"
 }
 
-output "app_url" {
-  description = "URL to access the application (HTTP)"
-  value       = "http://${aws_instance.app.public_ip}"
+# Nome do cluster ECS
+output "ecs_cluster_name" {
+  description = "ECS Cluster name"
+  value       = module.ecs_cluster.name
 }
 
-output "ssh_command" {
-  description = "Example SSH command to access the instance"
-  value       = "ssh -i /path/to/your/key.pem ubuntu@${aws_instance.app.public_ip}"
+# Nomes dos serviços (se você instanciou os dois módulos)
+output "frontend_service_name" {
+  description = "ECS service name (frontend)"
+  value       = module.frontend_service.service_name
+}
+
+output "backend_service_name" {
+  description = "ECS service name (backend)"
+  value       = module.backend_service.service_name
 }

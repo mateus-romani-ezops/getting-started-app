@@ -1,41 +1,29 @@
-data "aws_vpc" "default" {
-  default = true
+provider "aws" {
+  region = var.region
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
+data "aws_caller_identity" "current" {}
+
+output "account_id" {
+  value = data.aws_caller_identity.current.account_id
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
+module "network" {
+  source         = "./modules/network"
+  name           = "getting-started"
+  vpc_cidr       = "10.0.0.0/16"
+  public_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  azs            = ["${var.region}a", "${var.region}b"]
 }
 
-resource "aws_security_group" "app_sg" {
-  name        = "getting-started-app-sg"
-  description = "Allow HTTP and SSH inbound"
-  vpc_id      = data.aws_vpc.default.id
+# SG do ALB
+resource "aws_security_group" "alb_sg" {
+  name   = "alb-sg"
+  vpc_id = module.network.vpc_id
 
   ingress {
-    description = "SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "App port (8080)"
-    from_port   = 8080
-    to_port     = 8080
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -48,48 +36,121 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-resource "aws_instance" "app" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  subnet_id              = data.aws_subnets.default.ids[0]
-  associate_public_ip_address = true
-  vpc_security_group_ids = [aws_security_group.app_sg.id]
-  key_name               = var.key_name
-  user_data_replace_on_change = true
+# SG dos services ECS
+resource "aws_security_group" "ecs_service_sg" {
+  name   = "ecs-service-sg"
+  vpc_id = module.network.vpc_id
 
-  user_data = <<-EOF
-              #!/bin/bash
-              exec > >(tee -a /var/log/user-data.log) 2>&1
-              set -euo pipefail
-              
-              set -e
-              apt-get update -y
-              apt-get install -y git docker.io
-              # Install docker compose plugin
-              apt-get install -y curl
-              curl -SL https://github.com/docker/compose/releases/download/v2.40.2/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-              chmod +x /usr/local/bin/docker-compose
-              systemctl enable --now docker
+  ingress {
+    from_port       = 80 # vamos usar 80 no container do frontend
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
 
-              # Paths/vars
-              HOME_DIR=/home/ubuntu
-              APP_DIR=${var.app_dir}
-              BRANCH=${var.github_branch}
-              GITHUB_REPO=${var.github_repo}
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
-              # Clone the repository and run docker compose
-              mkdir -p "$HOME_DIR"
-              cd "$HOME_DIR"
-              if [ -d "$APP_DIR" ]; then rm -rf "$APP_DIR"; fi
-              git clone --branch "$BRANCH" "$GITHUB_REPO" "$APP_DIR"
+module "ecs_cluster" {
+  source = "./modules/ecs-cluster"
+  name   = "getting-started-cluster"
+}
 
-              cd "$APP_DIR"
-              # run docker compose
-              sudo docker-compose up -d
+module "alb" {
+  source            = "./modules/alb"
+  name              = "getting-started"
+  vpc_id            = module.network.vpc_id
+  subnet_ids        = module.network.public_subnet_ids
+  lb_sg_id          = aws_security_group.alb_sg.id
+  target_port       = 80
+  health_check_path = "/"
+}
 
-              EOF
+############################
+# IAM ROLES PARA ECS TASKS
+############################
 
-  tags = {
-    Name = "getting-started-app"
+# Role usada pelo ECS para puxar imagens do ECR e enviar logs p/ CloudWatch
+resource "aws_iam_role" "ecs_task_execution" {
+  name = "ecsTaskExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect    = "Allow",
+      Principal = { Service = "ecs-tasks.amazonaws.com" },
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Política gerenciada padrão (ECR pull + CloudWatch Logs)
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_managed" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# (Opcional) Permitir pull de imagens em contas/regs especiais ou usar SSM/Secrets via EXECUTION role
+# resource "aws_iam_role_policy_attachment" "ecs_task_execution_ssm" {
+#   role       = aws_iam_role.ecs_task_execution.name
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+# }
+
+# Role de APLICAÇÃO (o que o container pode acessar na AWS)
+# Se seu app NÃO precisa acessar nada na AWS, pode reaproveitar a execution role.
+resource "aws_iam_role" "ecs_task_app" {
+  name = "ecsTaskAppRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect    = "Allow",
+      Principal = { Service = "ecs-tasks.amazonaws.com" },
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+# FRONTEND SERVICE
+module "frontend_service" {
+  source             = "./modules/ecs-service"
+  name               = "frontend"
+  region             = var.region
+  cluster_name       = module.ecs_cluster.name
+  image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/getting-started-frontend:latest"
+  container_port     = 80
+  desired_count      = 2
+  subnet_ids         = module.network.public_subnet_ids
+  service_sg_id      = aws_security_group.ecs_service_sg.id
+  target_group_arn   = module.alb.target_group_arn
+  execution_role_arn = aws_iam_role.ecs_task_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task_app.arn
+
+}
+
+# BACKEND SERVICE (exemplo)
+module "backend_service" {
+  source             = "./modules/ecs-service"
+  name               = "backend"
+  region             = var.region
+  cluster_name       = module.ecs_cluster.name
+  image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/getting-started-backend:latest"
+  container_port     = 3000
+  desired_count      = 2
+  subnet_ids         = module.network.public_subnet_ids
+  service_sg_id      = aws_security_group.ecs_service_sg.id
+  target_group_arn   = module.alb.target_group_arn
+  execution_role_arn = aws_iam_role.ecs_task_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task_app.arn
+  environment = {
+    MYSQL_HOST     = "meu-rds-endpoint.rds.amazonaws.com"
+    MYSQL_USER     = "todos_user"
+    MYSQL_PASSWORD = "todos_password"
+    MYSQL_DB       = "todos_db"
   }
 }
