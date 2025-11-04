@@ -51,14 +51,14 @@ variable "azs" {
 variable "frontend_image" {
   description = "Docker image for frontend service"
   type        = string
-  default     = "123456789012.dkr.ecr.us-east-2.amazonaws.com/getting-started-frontend:latest"
+  default     = "618889059366.dkr.ecr.us-east-2.amazonaws.com/getting-started-frontend:latest"
 }
 
 # Imagem do backend (ECR ou Docker Hub)
 variable "backend_image" {
   description = "Docker image for backend service"
   type        = string
-  default     = "123456789012.dkr.ecr.us-east-2.amazonaws.com/getting-started-backend:latest"
+  default     = "618889059366.dkr.ecr.us-east-2.amazonaws.com/getting-started-backend:latest"
 }
 
 
