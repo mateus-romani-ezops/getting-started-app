@@ -125,6 +125,25 @@ module "alb" {
   health_check_path = "/"
 }
 
+# Private DNS namespace for service discovery (Cloud Map)
+resource "aws_service_discovery_private_dns_namespace" "sd_ns" {
+  name = "${var.project_name}.local"
+  vpc  = module.network.vpc_id
+}
+
+# Service Discovery entry for backend so frontend can resolve backend internally
+resource "aws_service_discovery_service" "backend_sd" {
+  name = "backend"
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.sd_ns.id
+    dns_records {
+      type = "A"
+      ttl  = 10
+    }
+    routing_policy = "MULTIVALUE"
+  }
+}
+
 ############################
 # IAM ROLES PARA ECS TASKS
 ############################
@@ -186,6 +205,11 @@ module "frontend_service" {
     # Some nginx template entrypoints use LOCAL_RESOLVERS to populate a
     # resolver directive. Provide it as well to cover that pattern.
     LOCAL_RESOLVERS = "10.0.0.2"
+    # Backend service discovery name and port used by nginx template to
+    # populate upstream backend. Frontend image should use these to proxy
+    # to the backend internally (no public ALB DNS required).
+    BACKEND_HOST = "${aws_service_discovery_service.backend_sd.name}.${aws_service_discovery_private_dns_namespace.sd_ns.name}"
+    BACKEND_PORT = "3000"
   }
 }
 
@@ -243,6 +267,8 @@ module "backend_service" {
     MYSQL_PASSWORD = var.mysql_password
     MYSQL_DB       = var.mysql_db
   }
+  # Register backend with Cloud Map so frontend can resolve it internally
+  service_registry_arn = aws_service_discovery_service.backend_sd.arn
 }
 
 # TG do backend (porta 3000)

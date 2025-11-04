@@ -17,3 +17,8 @@ variable "environment" {
   default = {}
 }
 variable "region" {}
+variable "service_registry_arn" {
+  description = "Optional service discovery registry ARN to register the ECS service with (Cloud Map)"
+  type        = string
+  default     = ""
+}
