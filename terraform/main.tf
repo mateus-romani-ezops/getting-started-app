@@ -13,7 +13,15 @@ module "network" {
   name           = "getting-started"
   vpc_cidr       = "10.0.0.0/16"
   public_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  project_name = "getting-started"
   azs            = ["${var.region}a", "${var.region}b"]
+}
+
+module "rds" {
+  source      = "./modules/rds"
+  db_name     = var.mysql_db
+  db_user     = var.mysql_user
+  db_password = var.mysql_password
 }
 
 # SG do ALB
