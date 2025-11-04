@@ -44,17 +44,10 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# SG dos services ECS
-resource "aws_security_group" "ecs_service_sg" {
-  name   = "ecs-service-sg"
+# SG do FRONTEND (80)
+resource "aws_security_group" "frontend_sg" {
+  name   = "ecs-frontend-sg"
   vpc_id = module.network.vpc_id
-
-  ingress {
-    from_port       = 80 # vamos usar 80 no container do frontend
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
-  }
 
   egress {
     from_port   = 0
@@ -63,6 +56,38 @@ resource "aws_security_group" "ecs_service_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+resource "aws_security_group_rule" "alb_to_frontend_80" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.frontend_sg.id
+  source_security_group_id = aws_security_group.alb_sg.id
+}
+
+# SG do BACKEND (3000)
+resource "aws_security_group" "backend_sg" {
+  name   = "ecs-backend-sg"
+  vpc_id = module.network.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group_rule" "alb_to_backend_3000" {
+  type                     = "ingress"
+  from_port                = 3000
+  to_port                  = 3000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.backend_sg.id
+  source_security_group_id = aws_security_group.alb_sg.id
+}
+
 
 module "ecs_cluster" {
   source = "./modules/ecs-cluster"
