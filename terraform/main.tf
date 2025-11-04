@@ -203,14 +203,52 @@ module "backend_service" {
   container_port     = 3000
   desired_count      = 2
   subnet_ids         = module.network.public_subnet_ids
-  service_sg_id      = aws_security_group.ecs_service_sg.id
-  target_group_arn   = module.alb.target_group_arn
+  service_sg_id      = aws_security_group.backend_sg.id
+  target_group_arn   = aws_lb_target_group.backend_tg.arn
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn
   environment = {
-    MYSQL_HOST     = "meu-rds-endpoint.rds.amazonaws.com"
-    MYSQL_USER     = "todos_user"
-    MYSQL_PASSWORD = "todos_password"
-    MYSQL_DB       = "todos_db"
+    MYSQL_HOST     = var.mysql_host
+    MYSQL_USER     = var.mysql_user
+    MYSQL_PASSWORD = var.mysql_password
+    MYSQL_DB       = var.mysql_db
   }
+}
+
+# TG do backend (porta 3000)
+resource "aws_lb_target_group" "backend_tg" {
+  name        = "getting-started-backend-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = module.network.vpc_id
+  target_type = "ip"
+
+  health_check {
+    path                = "/items"
+    matcher             = "200-399"
+    interval            = 15
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+  }
+}
+resource "aws_lb_listener_rule" "backend_rule" {
+  listener_arn = module.alb.listener_arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/items/*"]
+    }
+  }
+}
+
+resource "aws_db_subnet_group" "rds" {
+  name       = "getting-started-rds-subnets"
+  subnet_ids = module.network.private_subnet_ids
 }
