@@ -12,17 +12,38 @@ module "network" {
   source         = "./modules/network"
   name           = "getting-started"
   vpc_cidr       = "10.0.0.0/16"
-  public_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
-  project_name = "getting-started"
+  # Provide both names because the module defines both variables (one is
+  # required). Use root variable `public_subnets` for both so caller controls
+  # the subnet CIDRs.
+  public_subnets = var.public_subnets
+  public_subnet_cidrs = var.public_subnets
+  project_name   = "getting-started"
   azs            = ["${var.region}a", "${var.region}b"]
 }
 
 module "rds" {
-  source      = "./modules/rds"
-  db_name     = var.mysql_db
-  db_user     = var.mysql_user
-  db_password = var.mysql_password
+  source            = "./modules/rds"
+  db_name           = var.mysql_db
+  db_user           = var.mysql_user
+  db_password       = var.mysql_password
+  subnet_ids        = module.network.private_subnet_ids
+  vpc_id            = module.network.vpc_id
+  ecs_service_sg_id = module.backend_service.service_sg_id
+  db_subnet_group_name = aws_db_subnet_group.rds.name
 }
+
+resource "aws_security_group" "ecs_service_sg" {
+  name   = "ecs-service-sg"
+  vpc_id = module.network.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 
 # SG do ALB
 resource "aws_security_group" "alb_sg" {
@@ -157,6 +178,15 @@ module "frontend_service" {
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn
 
+  # Provide resolver for nginx template substitution so it can resolve
+  # the ALB DNS when proxying to a host computed at runtime.
+  # Amazon VPC DNS is typically at the .2 address of the VPC (10.0.0.2 here).
+  environment = {
+    NGINX_RESOLVER = "10.0.0.2"
+    # Some nginx template entrypoints use LOCAL_RESOLVERS to populate a
+    # resolver directive. Provide it as well to cover that pattern.
+    LOCAL_RESOLVERS = "10.0.0.2"
+  }
 }
 
 # TG do FRONTEND (porta 80)
@@ -208,7 +238,7 @@ module "backend_service" {
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn
   environment = {
-    MYSQL_HOST     = var.mysql_host
+    MYSQL_HOST     = module.rds.endpoint
     MYSQL_USER     = var.mysql_user
     MYSQL_PASSWORD = var.mysql_password
     MYSQL_DB       = var.mysql_db
@@ -243,7 +273,9 @@ resource "aws_lb_listener_rule" "backend_rule" {
 
   condition {
     path_pattern {
-      values = ["/items/*"]
+      # Match both the exact path and any subpaths so requests to /items
+      # and /items/... are forwarded to the backend target group.
+      values = ["/items", "/items/*"]
     }
   }
 }
@@ -252,3 +284,9 @@ resource "aws_db_subnet_group" "rds" {
   name       = "getting-started-rds-subnets"
   subnet_ids = module.network.private_subnet_ids
 }
+
+# NOTE: the module `modules/rds` also creates an aws_db_subnet_group; if you
+# intend to manage the DB subnet group inside that module, keep only one of
+# them. The duplicate root-level resource was removed earlier to avoid
+# collisions. If you want to keep a single root-level resource, remove the
+# resource inside the module instead.

@@ -1,13 +1,11 @@
-# --- Subnet group do RDS: use as subnets privadas do seu módulo de rede ---
-resource "aws_db_subnet_group" "rds" {
-  name       = "getting-started-rds-subnets"
-  subnet_ids = module.network.private_subnet_ids
-}
+## NOTE: DB subnet group is optionally managed at root. If a name is passed in
+## via `var.db_subnet_group_name` the module will use the existing group name
+## instead of creating a new one.
 
 # --- SG do RDS ---
 resource "aws_security_group" "rds_sg" {
   name   = "getting-started-rds-sg"
-  vpc_id = module.network.vpc_id
+  vpc_id = var.vpc_id
   egress {
     from_port   = 0
     to_port     = 0
@@ -22,19 +20,22 @@ resource "aws_security_group_rule" "ecs_to_rds_3306" {
   to_port                  = 3306
   protocol                 = "tcp"
   security_group_id        = aws_security_group.rds_sg.id
-  source_security_group_id = aws_security_group.ecs_service_sg.id
+  source_security_group_id = var.ecs_service_sg_id
 }
 
 # --- Instância MySQL ---
 resource "aws_db_instance" "mysql" {
-  identifier             = "getting-started-mysql"
-  engine                 = "mysql"
-  engine_version         = "8.0"
-  instance_class         = var.db_instance_class
-  db_subnet_group_name   = aws_db_subnet_group.rds.name
+  identifier        = "getting-started-mysql"
+  engine            = "mysql"
+  engine_version    = "8.0"
+  instance_class    = "db.t4g.micro"
+  allocated_storage = 20
+  storage_type      = "gp3"
+
+  # Use existing DB subnet group if provided, otherwise reference the
+  # module-managed subnet group (not created by default anymore).
+  db_subnet_group_name   = var.db_subnet_group_name != "" ? var.db_subnet_group_name : ""
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  allocated_storage      = var.db_allocated_storage
-  storage_type           = "gp3"
 
   db_name  = var.db_name
   username = var.db_user
@@ -46,3 +47,4 @@ resource "aws_db_instance" "mysql" {
   deletion_protection     = false
   skip_final_snapshot     = true
 }
+

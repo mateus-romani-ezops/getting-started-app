@@ -60,11 +60,9 @@ resource "aws_ecs_service" "this" {
     container_port   = var.container_port
   }
 
-  lifecycle {
-    ignore_changes = [task_definition]
-  }
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
+
 }
 
-output "service_name" {
-  value = aws_ecs_service.this.name
-}
+

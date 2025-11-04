@@ -32,7 +32,8 @@ variable "vpc_cidr" {
 variable "public_subnets" {
   description = "List of public subnet CIDRs"
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  # Adjusted to avoid overlap with private subnet defaults (10.0.2.0/24,10.0.3.0/24)
+  default     = ["10.0.1.0/24", "10.0.4.0/24"]
 }
 
 # Zonas de disponibilidade (duas por padrão)
