@@ -128,14 +128,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_managed" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# (Opcional) Permitir pull de imagens em contas/regs especiais ou usar SSM/Secrets via EXECUTION role
-# resource "aws_iam_role_policy_attachment" "ecs_task_execution_ssm" {
-#   role       = aws_iam_role.ecs_task_execution.name
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
-# }
-
-# Role de APLICAÇÃO (o que o container pode acessar na AWS)
-# Se seu app NÃO precisa acessar nada na AWS, pode reaproveitar a execution role.
+# Role de APLICAÇÃO
 resource "aws_iam_role" "ecs_task_app" {
   name = "ecsTaskAppRole"
 
@@ -159,12 +152,46 @@ module "frontend_service" {
   container_port     = 80
   desired_count      = 2
   subnet_ids         = module.network.public_subnet_ids
-  service_sg_id      = aws_security_group.ecs_service_sg.id
-  target_group_arn   = module.alb.target_group_arn
+  service_sg_id      = aws_security_group.frontend_sg.id
+  target_group_arn   = aws_lb_target_group.frontend_tg.arn
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn
 
 }
+
+# TG do FRONTEND (porta 80)
+resource "aws_lb_target_group" "frontend_tg" {
+  name        = "getting-started-frontend-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = module.network.vpc_id
+  target_type = "ip"
+
+  # Health check
+  health_check {
+    path                = "/favicon.ico"
+    matcher             = "200-399"
+    interval            = 15
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+  }
+}
+
+resource "aws_lb_listener_rule" "frontend_catch_all" {
+  listener_arn = module.alb.listener_arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend_tg.arn
+  }
+
+  condition {
+    path_pattern { values = ["/*"] }
+  }
+}
+
 
 # BACKEND SERVICE (exemplo)
 module "backend_service" {
