@@ -90,6 +90,14 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public_a.id
   depends_on    = [aws_internet_gateway.main]
+  # Deletion of NAT Gateways can take time on the AWS side; set a delete
+  # timeout so Terraform waits for the NAT to be fully removed before
+  # continuing. This reduces race conditions where the Internet Gateway
+  # detach fails because addresses are still mapped.
+  timeouts {
+    create = "10m"
+    delete = "20m"
+  }
 }
 
 resource "aws_route" "private_nat" {
