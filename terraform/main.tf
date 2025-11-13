@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 data "aws_caller_identity" "current" {}
 
 output "account_id" {
@@ -9,16 +5,16 @@ output "account_id" {
 }
 
 module "network" {
-  source         = "./modules/network"
-  name           = "getting-started"
-  vpc_cidr       = "10.0.0.0/16"
+  source   = "./modules/network"
+  name     = "getting-started"
+  vpc_cidr = "10.0.0.0/16"
   # Provide both names because the module defines both variables (one is
   # required). Use root variable `public_subnets` for both so caller controls
   # the subnet CIDRs.
-  public_subnets = var.public_subnets
+  public_subnets      = var.public_subnets
   public_subnet_cidrs = var.public_subnets
-  project_name   = "getting-started"
-  azs            = ["${var.region}a", "${var.region}b"]
+  project_name        = "getting-started"
+  azs                 = ["${var.region}a", "${var.region}b"]
 }
 
 module "rds" {
@@ -28,7 +24,7 @@ module "rds" {
   db_password       = var.mysql_password
   subnet_ids        = module.network.private_subnet_ids
   vpc_id            = module.network.vpc_id
-  ecs_service_sg_id = module.backend_service.service_sg_id
+  ecs_service_sg_id    = aws_security_group.backend_sg.id
   db_subnet_group_name = aws_db_subnet_group.rds.name
 }
 
@@ -191,8 +187,9 @@ module "frontend_service" {
   image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/getting-started-frontend:latest"
   container_port     = 80
   desired_count      = 2
-  subnet_ids         = module.network.public_subnet_ids
+  subnet_ids         = module.network.private_subnet_ids
   service_sg_id      = aws_security_group.frontend_sg.id
+  assign_public_ip   = false
   target_group_arn   = aws_lb_target_group.frontend_tg.arn
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn
@@ -256,8 +253,9 @@ module "backend_service" {
   image              = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/getting-started-backend:latest"
   container_port     = 3000
   desired_count      = 2
-  subnet_ids         = module.network.public_subnet_ids
+  subnet_ids         = module.network.private_subnet_ids
   service_sg_id      = aws_security_group.backend_sg.id
+  assign_public_ip   = false
   target_group_arn   = aws_lb_target_group.backend_tg.arn
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
   task_role_arn      = aws_iam_role.ecs_task_app.arn

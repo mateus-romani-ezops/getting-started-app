@@ -1,4 +1,7 @@
 # outputs.tf (para ECS)
+output "ecs_task_execution_role_arn" {
+  value = aws_iam_role.ecs_task_execution.arn
+}
 
 # DNS do ALB (endpoint público)
 output "alb_dns_name" {

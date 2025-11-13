@@ -1,0 +1,15 @@
+output "lb_dns_name" {
+  value       = aws_lb.this.dns_name
+  description = "Public DNS of the ALB"
+}
+
+output "target_group_arn" {
+  value       = aws_lb_target_group.this.arn
+  description = "Default target group ARN (frontend)"
+}
+
+# ➜ ESTE É O QUE FALTAVA
+output "listener_arn" {
+  value       = aws_lb_listener.http.arn
+  description = "HTTP listener ARN (port 80)"
+}

@@ -9,6 +9,18 @@ const deleteItem = require('./routes/deleteItem');
 app.use(express.json());
 app.use(express.static(__dirname + '/static'));
 
+// lightweight health check used by load balancers / orchestration
+app.get('/health', async (req, res) => {
+    try {
+        // call a cheap DB operation to ensure persistence is available
+        await db.getItems();
+        res.sendStatus(200);
+    } catch (err) {
+        console.error('Health check failed:', err && err.message ? err.message : err);
+        res.status(500).send('unhealthy');
+    }
+});
+
 app.get('/items', getItems);
 app.post('/items', addItem);
 app.put('/items/:id', updateItem);
