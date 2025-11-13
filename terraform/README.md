@@ -9,7 +9,7 @@ Important assumptions and notes
 - The repo is expected to contain a `docker-compose.yaml` at its root (the repo you provided already has a `docker-compose.yaml`). The user-data will attempt `docker-compose up -d`.
 
 Variables
-- `aws_region` (default: `us-east-1`)
+- `aws_region` (default: `us-east-2`)
 - `instance_type` (default: `t3.micro`)
 - `key_name` (required): name of existing EC2 keypair in AWS
 - `github_repo` (required): HTTPS URL to Git repo to clone

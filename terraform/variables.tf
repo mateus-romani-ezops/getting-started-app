@@ -4,9 +4,9 @@
 
 # Região da AWS onde o cluster ECS será criado
 variable "region" {
-  description = "AWS region to deploy resources (e.g. us-east-1)"
+  description = "AWS region to deploy resources (e.g. us-east-2). Note: CloudFront requires ACM certificates in us-east-1; Terraform keeps an aliased provider for that region."
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 # Nome-base do projeto (usado em nomes de VPC, ALB, ECS, etc.)
@@ -91,4 +91,12 @@ variable "mysql_db" {
   description = "MySQL database name"
   type        = string
   default     = "todos_db"
+}
+
+# When true, Terraform will create only the frontend S3+CloudFront resources
+# and skip creating the rest of the example infrastructure (VPC, RDS, ECS, ALB).
+variable "deploy_frontend_only" {
+  description = "If true, only create frontend S3 + CloudFront resources (useful for local testing)."
+  type        = bool
+  default     = false
 }

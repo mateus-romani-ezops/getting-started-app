@@ -19,3 +19,9 @@ provider "aws" {
     }
   }
 }
+
+# Provider alias for resources that must live in us-east-1 (CloudFront ACM)
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
