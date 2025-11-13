@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GeneralTerraformPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "elasticloadbalancing:*",
+        "rds:*",
+        "ecs:*",
+        "iam:PassRole",
+        "s3:*",
+        "cloudfront:*",
+        "route53:*",
+        "logs:*",
+        "secretsmanager:*",
+        "kms:*",
+        "autoscaling:*",
+        "cloudwatch:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
