@@ -7,3 +7,6 @@
 
 #ignore dist folders
 dist/
+
+#ignore node modules
+node_modules/
