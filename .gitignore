@@ -4,3 +4,6 @@
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
+
+#ignore dist folders
+dist/
