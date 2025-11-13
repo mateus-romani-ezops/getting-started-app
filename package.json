@@ -6,7 +6,9 @@
   "scripts": {
     "prettify": "prettier -l --write \"**/*.js\"",
     "test": "jest",
-    "dev": "nodemon -L src/index.js"
+    "dev": "nodemon -L src/index.js",
+    "build": "rm -rf dist && mkdir -p dist && cp -r src/static/* dist/ && echo 'Built static files into dist/'",
+    "deploy-frontend": "bash scripts/deploy-frontend.sh ${FRONTEND_BUCKET:-} ${CLOUDFRONT_DISTRIBUTION_ID:-} ${AWS_PROFILE:-default}"
   },
   "dependencies": {
     "express": "^4.18.2",
