@@ -2,7 +2,7 @@ name: Frontend Deploy (OIDC)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -35,7 +35,11 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        env:
+          SQLITE_DB_LOCATION: ${{ github.workspace }}/data/todos.sqlite
+        run: |
+          mkdir -p data
+          npm test
 
       - name: Build static assets
         run: npm run build

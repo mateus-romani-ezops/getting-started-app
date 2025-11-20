@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
-const location = process.env.SQLITE_DB_LOCATION || '/etc/todos/todo.db';
+const location = process.env.SQLITE_DB_LOCATION || path.join(process.cwd(), 'data', 'todo.sqlite');
 
 let db, dbAll, dbRun;
 
@@ -91,7 +91,7 @@ async function updateItem(id, item) {
             },
         );
     });
-} 
+}
 
 async function removeItem(id) {
     return new Promise((acc, rej) => {
