@@ -34,31 +34,31 @@ jobs:
       - name: Terraform Plan
         run: terraform -chdir=terraform plan -input=false -no-color
 
-  # terraform-apply:
-  #   name: Terraform Apply (main)
-  #   needs: terraform-plan
-  #   if: github.ref == 'refs/heads/main'
-  #   runs-on: ubuntu-latest
-  #   environment: production
-  #   permissions:
-  #     id-token: write
-  #     contents: read
+  terraform-apply:
+    name: Terraform Apply (main)
+    needs: terraform-plan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
 
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
 
-  #     - name: Configure AWS credentials (OIDC)
-  #       uses: aws-actions/configure-aws-credentials@v3
-  #       with:
-  #         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_TERRAFORM }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_TERRAFORM }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-  #     - name: Terraform Init
-  #       run: terraform -chdir=terraform init -input=false
+      - name: Terraform Init
+        run: terraform -chdir=terraform init -input=false
 
-  #     - name: Terraform Apply
-  #       run: terraform -chdir=terraform apply -input=false -auto-approve
+      - name: Terraform Apply
+        run: terraform -chdir=terraform apply -input=false -auto-approve
