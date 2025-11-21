@@ -24,13 +24,13 @@ module "network" {
 }
 
 module "rds" {
-  count = local.create_non_frontend ? 1 : 0
-  source            = "./modules/rds"
-  db_name           = var.mysql_db
-  db_user           = var.mysql_user
-  db_password       = var.mysql_password
-  subnet_ids        = module.network[0].private_subnet_ids
-  vpc_id            = module.network[0].vpc_id
+  count                = local.create_non_frontend ? 1 : 0
+  source               = "./modules/rds"
+  db_name              = var.mysql_db
+  db_user              = var.mysql_user
+  db_password          = var.mysql_password
+  subnet_ids           = module.network[0].private_subnet_ids
+  vpc_id               = module.network[0].vpc_id
   ecs_service_sg_id    = aws_security_group.backend_sg[0].id
   db_subnet_group_name = aws_db_subnet_group.rds[0].name
 }
@@ -85,7 +85,7 @@ resource "aws_security_group" "frontend_sg" {
 }
 
 resource "aws_security_group_rule" "alb_to_frontend_80" {
-  count = local.create_non_frontend ? 1 : 0
+  count                    = local.create_non_frontend ? 1 : 0
   type                     = "ingress"
   from_port                = 80
   to_port                  = 80
@@ -109,7 +109,7 @@ resource "aws_security_group" "backend_sg" {
 }
 
 resource "aws_security_group_rule" "alb_to_backend_3000" {
-  count = local.create_non_frontend ? 1 : 0
+  count                    = local.create_non_frontend ? 1 : 0
   type                     = "ingress"
   from_port                = 3000
   to_port                  = 3000
@@ -139,14 +139,14 @@ module "alb" {
 # Private DNS namespace for service discovery (Cloud Map)
 resource "aws_service_discovery_private_dns_namespace" "sd_ns" {
   count = local.create_non_frontend ? 1 : 0
-  name = "${var.project_name}.local"
-  vpc  = module.network[0].vpc_id
+  name  = "${var.project_name}.local"
+  vpc   = module.network[0].vpc_id
 }
 
 # Service Discovery entry for backend so frontend can resolve backend internally
 resource "aws_service_discovery_service" "backend_sd" {
   count = local.create_non_frontend ? 1 : 0
-  name = "backend"
+  name  = "backend"
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.sd_ns[0].id
     dns_records {
@@ -164,7 +164,7 @@ resource "aws_service_discovery_service" "backend_sd" {
 # Role usada pelo ECS para puxar imagens do ECR e enviar logs p/ CloudWatch
 resource "aws_iam_role" "ecs_task_execution" {
   count = local.create_non_frontend ? 1 : 0
-  name = "ecsTaskExecutionRole"
+  name  = "ecsTaskExecutionRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -178,7 +178,7 @@ resource "aws_iam_role" "ecs_task_execution" {
 
 # Política gerenciada padrão (ECR pull + CloudWatch Logs)
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_managed" {
-  count = local.create_non_frontend ? 1 : 0
+  count      = local.create_non_frontend ? 1 : 0
   role       = aws_iam_role.ecs_task_execution[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
@@ -186,7 +186,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_managed" {
 # Role de APLICAÇÃO
 resource "aws_iam_role" "ecs_task_app" {
   count = local.create_non_frontend ? 1 : 0
-  name = "ecsTaskAppRole"
+  name  = "ecsTaskAppRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -226,14 +226,14 @@ module "frontend_service" {
     # Backend service discovery name and port used by nginx template to
     # populate upstream backend. Frontend image should use these to proxy
     # to the backend internally (no public ALB DNS required).
-  BACKEND_HOST = "${length(aws_service_discovery_service.backend_sd) > 0 ? aws_service_discovery_service.backend_sd[0].name : "backend"}.${length(aws_service_discovery_private_dns_namespace.sd_ns) > 0 ? aws_service_discovery_private_dns_namespace.sd_ns[0].name : "${var.project_name}.local"}"
+    BACKEND_HOST = "${length(aws_service_discovery_service.backend_sd) > 0 ? aws_service_discovery_service.backend_sd[0].name : "backend"}.${length(aws_service_discovery_private_dns_namespace.sd_ns) > 0 ? aws_service_discovery_private_dns_namespace.sd_ns[0].name : "${var.project_name}.local"}"
     BACKEND_PORT = "3000"
   }
 }
 
 # TG do FRONTEND (porta 80)
 resource "aws_lb_target_group" "frontend_tg" {
-  count = local.create_non_frontend ? 1 : 0
+  count       = local.create_non_frontend ? 1 : 0
   name        = "getting-started-frontend-tg"
   port        = 80
   protocol    = "HTTP"
@@ -252,14 +252,14 @@ resource "aws_lb_target_group" "frontend_tg" {
 }
 
 resource "aws_lb_listener_rule" "frontend_catch_all" {
-  count = local.create_non_frontend ? 1 : 0
+  count        = local.create_non_frontend ? 1 : 0
   listener_arn = module.alb[0].listener_arn
   priority     = 100
 
-    action {
-      type             = "forward"
-      target_group_arn = aws_lb_target_group.frontend_tg[0].arn
-    }
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend_tg[0].arn
+  }
 
   condition {
     path_pattern { values = ["/*"] }
@@ -269,7 +269,7 @@ resource "aws_lb_listener_rule" "frontend_catch_all" {
 
 # BACKEND SERVICE (exemplo)
 module "backend_service" {
-  count = local.create_non_frontend ? 1 : 0
+  count              = local.create_non_frontend ? 1 : 0
   source             = "./modules/ecs-service"
   name               = "backend"
   region             = var.region
@@ -295,7 +295,7 @@ module "backend_service" {
 
 # TG do backend (porta 3000)
 resource "aws_lb_target_group" "backend_tg" {
-  count = local.create_non_frontend ? 1 : 0
+  count       = local.create_non_frontend ? 1 : 0
   name        = "getting-started-backend-tg"
   port        = 3000
   protocol    = "HTTP"
@@ -312,14 +312,14 @@ resource "aws_lb_target_group" "backend_tg" {
   }
 }
 resource "aws_lb_listener_rule" "backend_rule" {
-  count = local.create_non_frontend ? 1 : 0
+  count        = local.create_non_frontend ? 1 : 0
   listener_arn = module.alb[0].listener_arn
   priority     = 10
 
-    action {
-      type             = "forward"
-      target_group_arn = aws_lb_target_group.backend_tg[0].arn
-    }
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend_tg[0].arn
+  }
 
   condition {
     path_pattern {

@@ -97,8 +97,8 @@ resource "aws_cloudfront_distribution" "frontend" {
     target_origin_id       = "s3-${aws_s3_bucket.frontend_bucket[0].id}"
     viewer_protocol_policy = "redirect-to-https"
 
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD"]
+    allowed_methods = ["GET", "HEAD", "OPTIONS"]
+    cached_methods  = ["GET", "HEAD"]
 
     forwarded_values {
       query_string = false
@@ -139,9 +139,9 @@ resource "aws_cloudfront_distribution" "frontend" {
   # an ACM cert exists (created above). Otherwise use the default CloudFront
   # certificate for the cloudfront.net domain.
   viewer_certificate {
-    acm_certificate_arn = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? aws_acm_certificate.cf_cert[0].arn : null
-    ssl_support_method  = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? "sni-only" : null
-    minimum_protocol_version = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? "TLSv1.2_2019" : null
+    acm_certificate_arn            = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? aws_acm_certificate.cf_cert[0].arn : null
+    ssl_support_method             = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? "sni-only" : null
+    minimum_protocol_version       = var.frontend_domain != "" && length(aws_acm_certificate.cf_cert) > 0 ? "TLSv1.2_2019" : null
     cloudfront_default_certificate = var.frontend_domain == "" ? true : false
   }
 
