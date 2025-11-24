@@ -8,7 +8,6 @@ output "target_group_arn" {
   description = "Default target group ARN (frontend)"
 }
 
-# ➜ ESTE É O QUE FALTAVA
 output "listener_arn" {
   value       = aws_lb_listener.http.arn
   description = "HTTP listener ARN (port 80)"

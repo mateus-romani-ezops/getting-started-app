@@ -59,6 +59,25 @@ services:
       start_period: 30s
     volumes:
       - db-data:/var/lib/mysql
+  prometheus:
+    networks:
+      - default
+    image: prom/prometheus:latest
+    container_name: getting-started-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+  grafana:
+    networks:
+      - default
+    image: grafana/grafana:latest
+    container_name: getting-started-grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
 
 volumes:
   db-data:
