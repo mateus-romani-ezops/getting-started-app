@@ -325,7 +325,7 @@ resource "aws_lb_listener_rule" "backend_rule" {
     path_pattern {
       # Match both the exact path and any subpaths so requests to /items
       # and /items/... are forwarded to the backend target group.
-      values = ["/items", "/items/*"]
+      values = ["/items", "/items/*", "/metrics", "/metrics/*"]
     }
   }
 }
