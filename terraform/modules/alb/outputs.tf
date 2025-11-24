@@ -12,3 +12,8 @@ output "listener_arn" {
   value       = aws_lb_listener.http.arn
   description = "HTTP listener ARN (port 80)"
 }
+
+output "security_group_id" {
+  value       = var.lb_sg_id
+  description = "Security group ID attached to the ALB"
+}

@@ -336,8 +336,18 @@ resource "aws_db_subnet_group" "rds" {
   subnet_ids = module.network[0].private_subnet_ids
 }
 
-# NOTE: the module `modules/rds` also creates an aws_db_subnet_group; if you
-# intend to manage the DB subnet group inside that module, keep only one of
-# them. The duplicate root-level resource was removed earlier to avoid
-# collisions. If you want to keep a single root-level resource, remove the
-# resource inside the module instead.
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  project_name          = "getting-started"
+  vpc_id                = module.network[0].vpc_id
+  private_subnets       = module.network[0].private_subnet_ids
+  ecs_cluster_id        = module.ecs_cluster[0].id
+  execution_role_arn    = aws_iam_role.ecs_task_execution[0].arn
+  alb_listener_arn      = module.alb[0].listener_arn
+  alb_security_group_id = module.alb[0].security_group_id
+
+  prometheus_image = "618889059366.dkr.ecr.us-east-2.amazonaws.com/prometheus:latest"
+  grafana_image    = "618889059366.dkr.ecr.us-east-2.amazonaws.com/grafana:latest"
+}
+
