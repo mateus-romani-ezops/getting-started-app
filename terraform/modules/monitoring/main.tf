@@ -124,6 +124,10 @@ resource "aws_ecs_task_definition" "monitoring" {
         {
           name  = "GF_SERVER_ROOT_URL"
           value = "%(protocol)s://%(domain)s/grafana/"
+        },
+        {
+          name  = "GF_SERVER_SERVE_FROM_SUB_PATH"
+          value = "true"
         }
       ]
       logConfiguration = {
