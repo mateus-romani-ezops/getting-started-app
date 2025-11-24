@@ -21,10 +21,10 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.get('/items', getItems);
-app.post('/items', addItem);
-app.put('/items/:id', updateItem);
-app.delete('/items/:id', deleteItem);
+app.get('/api/items', getItems);
+app.post('/api/items', addItem);
+app.put('/api/items/:id', updateItem);
+app.delete('/api/items/:id', deleteItem);
 
 db.init().then(() => {
     app.listen(3000, '0.0.0.0', () => console.log('Listening on port 3000'));
