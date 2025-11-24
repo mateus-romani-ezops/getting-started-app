@@ -119,15 +119,19 @@ resource "aws_ecs_task_definition" "monitoring" {
         },
         {
           name  = "GF_SECURITY_ADMIN_PASSWORD"
-          value = "changeme" # depois você troca pra algo seguro / secret
+          value = "changeme"
         },
         {
           name  = "GF_SERVER_ROOT_URL"
-          value = "%(protocol)s://%(domain)s/grafana/"
+          value = "http://${var.alb_dns_name}/grafana/"
         },
         {
           name  = "GF_SERVER_SERVE_FROM_SUB_PATH"
           value = "true"
+        },
+        {
+          name = "GF_SERVER_DOMAIN"
+          value = "${var.alb_dns_name}"
         }
       ]
       logConfiguration = {

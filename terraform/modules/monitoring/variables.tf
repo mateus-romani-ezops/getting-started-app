@@ -49,3 +49,8 @@ variable "project_name" {
   description = "Prefix for naming resources"
   default     = "getting-started"
 }
+
+variable "alb_dns_name" {
+  type        = string
+  description = "Public DNS name of the ALB (used by Grafana GF_SERVER_DOMAIN)"
+}

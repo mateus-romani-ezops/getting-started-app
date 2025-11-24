@@ -346,6 +346,7 @@ module "monitoring" {
   execution_role_arn    = aws_iam_role.ecs_task_execution[0].arn
   alb_listener_arn      = module.alb[0].listener_arn
   alb_security_group_id = module.alb[0].security_group_id
+  alb_dns_name          = length(module.alb) > 0 ? module.alb[0].dns_name : ""
 
   prometheus_image = "618889059366.dkr.ecr.us-east-2.amazonaws.com/prometheus:latest"
   grafana_image    = "618889059366.dkr.ecr.us-east-2.amazonaws.com/grafana:latest"
