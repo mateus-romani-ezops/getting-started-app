@@ -41,9 +41,62 @@ app.get('/metrics', async (req, res) => {
     res.end(await register.metrics());
 });
 
-app.get('/ping-metrics', (req, res) => {
-    res.send('metrics-version-v1');
+const httpRequestDuration = new client.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.05, 0.1, 0.3, 0.5, 1, 2, 5] // personalizável
 });
+
+register.registerMetric(httpRequestDuration);
+
+// medir duração no middleware
+app.use((req, res, next) => {
+    const start = process.hrtime();
+
+    res.on('finish', () => {
+        const diff = process.hrtime(start);
+        const duration = diff[0] + diff[1] / 1e9;
+
+        httpRequestDuration.observe({
+            method: req.method,
+            route: req.path,
+            status_code: res.statusCode,
+        }, duration);
+    });
+
+    next();
+});
+
+const itemsInDB = new client.Gauge({
+    name: 'items_in_db',
+    help: 'Total items currently stored',
+});
+register.registerMetric(itemsInDB);
+
+// atualizar toda vez que alguém buscar os itens
+app.use(async (req, res, next) => {
+    const items = await db.getItems();
+    itemsInDB.set(items.length);
+    next();
+});
+
+const dbErrors = new client.Counter({
+    name: 'db_errors_total',
+    help: 'Total DB errors',
+});
+register.registerMetric(dbErrors);
+
+app.use(async (req, res, next) => {
+    try {
+        await db.getItems();
+        next();
+    } catch (err) {
+        dbErrors.inc();
+        next(err);
+    }
+});
+
 
 // lightweight health check used by load balancers / orchestration
 app.get('/health', async (req, res) => {
