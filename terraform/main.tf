@@ -348,7 +348,7 @@ module "monitoring" {
   alb_security_group_id = module.alb[0].security_group_id
   alb_dns_name          = length(module.alb) > 0 ? module.alb[0].lb_dns_name : ""
 
-  prometheus_image = "618889059366.dkr.ecr.us-east-2.amazonaws.com/prometheus:latest"
-  grafana_image    = "618889059366.dkr.ecr.us-east-2.amazonaws.com/grafana:latest"
+  prometheus_image = "618889059366.dkr.ecr.us-east-2.amazonaws.com/prometheus-custom:latest"
+  grafana_image    = "618889059366.dkr.ecr.us-east-2.amazonaws.com/grafana-custom:latest"
 }
 

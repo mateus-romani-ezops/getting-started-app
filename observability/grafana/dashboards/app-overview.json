@@ -1,0 +1,110 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Targets UP",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(up)"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "type": "stat",
+      "title": "Requests por segundo (RPS)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m]))"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "type": "stat",
+      "title": "Erros 4xx",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"4..\"}[5m]))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "type": "stat",
+      "title": "Erros 5xx",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))"
+        }
+      ],
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 3 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latência HTTP (P95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latência HTTP (P99)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 3, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Uso de CPU por container",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total[1m])"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Uso de memória por container",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 }
+    }
+  ],
+  "schemaVersion": 36,
+  "title": "App Overview",
+  "version": 1
+}

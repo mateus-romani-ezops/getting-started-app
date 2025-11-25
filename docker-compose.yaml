@@ -67,7 +67,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
   grafana:
     networks:
@@ -78,6 +78,9 @@ services:
       - "3000:3000"
     depends_on:
       - prometheus
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards
 
 volumes:
   db-data:
