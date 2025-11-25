@@ -5,4 +5,4 @@ scrape_configs:
   - job_name: "backend-aws"
     metrics_path: /metrics
     static_configs:
-      - targets: ["http://getting-started-1935218100.us-east-2.elb.amazonaws.com:80"]
+      - targets: ["http://getting-started-1842817127.us-east-2.elb.amazonaws.com:80"]
