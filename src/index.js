@@ -41,6 +41,10 @@ app.get('/metrics', async (req, res) => {
     res.end(await register.metrics());
 });
 
+app.get('/ping-metrics', (req, res) => {
+    res.send('metrics-version-v1');
+});
+
 // lightweight health check used by load balancers / orchestration
 app.get('/health', async (req, res) => {
     try {
